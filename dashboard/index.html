@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gifting Pulse</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --panel: #ffffff; --ink: #1c1b19; --muted: #6a6761; --line: #dedad2;
+    --accent: #0a7f8c; --accent-soft: #dcefef; --good: #1f7a4d; --warn: #a86400; --warn-soft: #f7ecd2;
+    --bad: #c0283a; --bad-soft: #f8e1e4; --info-soft: #e8ecf1; --series2: #8a7bd1; --grid: #ebe8e1; --band: rgba(10,127,140,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151514; --panel: #1f1f1d; --ink: #f1efe9; --muted: #a29e95; --line: #34332f;
+      --accent: #4fc3cf; --accent-soft: #17383c; --good: #5fcf9a; --warn: #e8b04a; --warn-soft: #3a2f17;
+      --bad: #ff7a89; --bad-soft: #3d1c22; --info-soft: #262a30; --series2: #b3a6f0; --grid: #2b2a27; --band: rgba(79,195,207,.13);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151514; --panel: #1f1f1d; --ink: #f1efe9; --muted: #a29e95; --line: #34332f;
+    --accent: #4fc3cf; --accent-soft: #17383c; --good: #5fcf9a; --warn: #e8b04a; --warn-soft: #3a2f17;
+    --bad: #ff7a89; --bad-soft: #3d1c22; --info-soft: #262a30; --series2: #b3a6f0; --grid: #2b2a27; --band: rgba(79,195,207,.13);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 20px 16px 48px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; margin-bottom: 16px; }
+  h1 { font-size: 24px; margin: 0; letter-spacing: -.01em; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  select, button { font: inherit; font-size: 14px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+  button { cursor: pointer; }
+  button:hover, select:hover { border-color: var(--accent); }
+  .grid { display: grid; gap: 14px; }
+  .kpis { grid-template-columns: repeat(4, 1fr); margin-bottom: 14px; }
+  @media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .kpi .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi .value { font-size: 26px; font-weight: 650; letter-spacing: -.02em; margin-top: 2px; }
+  .kpi .note { font-size: 12px; color: var(--muted); }
+  .up { color: var(--good); } .down { color: var(--bad); }
+  h2 { font-size: 16px; margin: 0 0 2px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+  .two { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); margin-top: 14px; }
+  section { margin-top: 14px; }
+  .scope { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 1px 8px; margin-left: 6px; vertical-align: 2px; white-space: nowrap; }
+  /* findings */
+  .finding { border-left: 4px solid var(--line); padding: 10px 14px; margin-bottom: 10px; background: var(--panel); border-radius: 0 10px 10px 0; border-top: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .finding.high { border-left-color: var(--bad); } .finding.medium { border-left-color: var(--warn); } .finding.info { border-left-color: var(--accent); }
+  .finding summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+  .finding summary::-webkit-details-marker { display: none; }
+  .tag { font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; padding: 1px 7px; border-radius: 99px; flex: none; }
+  .tag.high { background: var(--bad-soft); color: var(--bad); } .tag.medium { background: var(--warn-soft); color: var(--warn); } .tag.info { background: var(--info-soft); color: var(--muted); }
+  .finding h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 12px 0 4px; }
+  .finding ul { margin: 0; padding-left: 20px; } .finding li { margin: 2px 0; }
+  .guard { background: var(--info-soft); border-radius: 8px; padding: 6px 10px; margin-top: 10px; font-size: 13px; }
+  /* tables, bars */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  td { padding: 6px; border-bottom: 1px solid var(--grid); }
+  td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.hl td { background: var(--bad-soft); }
+  .bar { display: grid; grid-template-columns: 120px 1fr 62px; gap: 8px; align-items: center; margin: 6px 0; font-size: 14px; }
+  .track { background: var(--grid); border-radius: 6px; height: 14px; position: relative; }
+  .fill { position: absolute; top: 0; bottom: 0; border-radius: 6px; }
+  svg text { fill: var(--muted); font-size: 11px; }
+  svg { width: 100%; height: auto; display: block; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  footer { margin-top: 28px; color: var(--muted); font-size: 12px; }
+  @media (max-width: 520px) { .bar { grid-template-columns: 90px 1fr 54px; } .kpi .value { font-size: 22px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Gifting Pulse</h1>
+      <div class="sub" id="range"></div>
+    </div>
+    <div class="filters">
+      <label>Region <select id="f-region"></select></label>
+      <label>Platform <select id="f-platform"><option value="">All</option><option value="ios">iOS</option><option value="android">Android</option></select></label>
+      <button id="reset">Reset</button>
+      <button id="theme" aria-label="Toggle dark mode">Theme</button>
+    </div>
+  </header>
+
+  <div class="grid kpis" id="kpis"></div>
+
+  <section>
+    <h2>What needs attention <span class="scope">all traffic</span></h2>
+    <p class="hint">Found by fixed rules, ranked by severity. Open one to see the numbers behind it, next steps and the guardrail.</p>
+    <div id="findings"></div>
+  </section>
+
+  <section class="card">
+    <h2>Daily gifting <span class="scope" id="scope-daily"></span></h2>
+    <p class="hint">Coins gifted per day with a 7-day average. Shaded: the campaign week. Dashed line: start of the last 7 days.</p>
+    <div id="daily"></div>
+    <div class="legend"><span><i class="sw" style="background:var(--accent)"></i>Coins per day</span><span><i class="sw" style="background:var(--series2)"></i>7-day average</span><span><i class="sw" style="background:var(--band)"></i>Campaign week</span></div>
+  </section>
+
+  <div class="grid two">
+    <div class="card">
+      <h2>Why did gifting change? <span class="scope" id="scope-decomp"></span></h2>
+      <p class="hint">Last 7 days vs the 7 before. Coins = viewers &times; gift-send rate &times; gifts per gifter &times; coins per gift. The biggest mover is the place to look.</p>
+      <div id="decomp"></div>
+    </div>
+    <div class="card">
+      <h2>Where did it change? <span class="scope">all traffic</span></h2>
+      <p class="hint">Coins by platform and region, last 7 days vs the 7 before.</p>
+      <div id="segments"></div>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <h2>New gifters: do they come back? <span class="scope" id="scope-ret"></span></h2>
+      <p class="hint">Share of new gifters (first gift inside the period) who gift again.</p>
+      <div id="retention"></div>
+    </div>
+    <div class="card">
+      <h2>Campaign result <span class="scope">fraud accounts removed</span></h2>
+      <p class="hint" id="camp-hint"></p>
+      <div id="campaign"></div>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <h2>Creators <span class="scope">all traffic</span></h2>
+      <p class="hint">Supply side. Gifter health depends on creators staying.</p>
+      <div id="creators"></div>
+      <h2 style="margin-top:14px">Mid-tier creators who stopped, by week</h2>
+      <div id="churn"></div>
+    </div>
+    <div class="card">
+      <h2>Trust and safety <span class="scope">all traffic</span></h2>
+      <p class="hint">Suspected ring, flagged minors and prize reconciliation.</p>
+      <div id="safety"></div>
+    </div>
+  </div>
+
+  <footer>Synthetic data generated for this demo (seed 7). No real users, creators or payments. Every number comes from code in <code>dashboard/metrics.js</code>, which is checked against the Python reference in <code>tests/</code>.</footer>
+</div>
+
+<script src="data.js"></script>
+<script src="metrics.js"></script>
+<script>
+(function () {
+  'use strict';
+  var D = window.GIFTING_DATA, M = window.Metrics, F = M.fmt, NS = 'http://www.w3.org/2000/svg';
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { region: '', platform: '' };
+
+  function dateOf(day) {
+    var d = new Date(D.start + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + day);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  }
+  function cls(x) { return x >= 0 ? 'up' : 'down'; }
+  function scopeLabel() {
+    var parts = [state.region, state.platform && (state.platform === 'ios' ? 'iOS' : 'Android')].filter(Boolean);
+    return parts.length ? parts.join(' · ') : 'all traffic';
+  }
+
+  /* ---------- tiny SVG helpers ---------- */
+  function svg(w, h) { var s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 ' + w + ' ' + h); s.setAttribute('role', 'img'); return s; }
+  function el(parent, tag, attrs, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    parent.appendChild(e); return e;
+  }
+  function niceMax(x) { var p = Math.pow(10, Math.floor(Math.log10(x || 1))), n = x / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
+  function short(x) { return x >= 1e6 ? (x / 1e6).toFixed(1) + 'M' : x >= 1e3 ? Math.round(x / 1e3) + 'k' : String(Math.round(x)); }
+
+  function dailyChart(s) {
+    var W = 1100, H = 280, L = 48, R = 12, T = 12, B = 28, n = s.daily.length;
+    var max = niceMax(Math.max.apply(null, s.daily)), sx = function (d) { return L + (W - L - R) * d / (n - 1); }, sy = function (v) { return T + (H - T - B) * (1 - v / max); };
+    var g = svg(W, H); g.setAttribute('aria-label', 'Daily coins gifted');
+    for (var i = 0; i <= 4; i++) { var v = max * i / 4; el(g, 'line', { x1: L, x2: W - R, y1: sy(v), y2: sy(v), stroke: 'var(--grid)' }); el(g, 'text', { x: L - 6, y: sy(v) + 4, 'text-anchor': 'end' }, short(v)); }
+    var c = D.campaign; el(g, 'rect', { x: sx(c.start_day), y: T, width: sx(c.end_day) - sx(c.start_day), height: H - T - B, fill: 'var(--band)' });
+    for (var d = 0; d < n; d += 14) el(g, 'text', { x: sx(d), y: H - 8, 'text-anchor': 'middle' }, dateOf(d));
+    el(g, 'line', { x1: sx(n - 7), x2: sx(n - 7), y1: T, y2: H - B, stroke: 'var(--muted)', 'stroke-dasharray': '4 4' });
+    var pts = s.daily.map(function (v, d) { return sx(d) + ',' + sy(v); }).join(' ');
+    el(g, 'polyline', { points: pts, fill: 'none', stroke: 'var(--accent)', 'stroke-width': 1.6, opacity: .85 });
+    var avg = s.daily.map(function (v, d) { var lo = Math.max(0, d - 6), t = 0; for (var k = lo; k <= d; k++) t += s.daily[k]; return sx(d) + ',' + sy(t / (d - lo + 1)); }).join(' ');
+    el(g, 'polyline', { points: avg, fill: 'none', stroke: 'var(--series2)', 'stroke-width': 2.6 });
+    $('daily').innerHTML = ''; $('daily').appendChild(g);
+  }
+
+  function weekBars(values, color, labelFn) {
+    var W = 520, H = 130, L = 24, B = 22, T = 8, n = values.length, max = Math.max.apply(null, values.concat([1])), bw = (W - L) / n;
+    var g = svg(W, H);
+    values.forEach(function (v, i) {
+      var h = (H - B - T) * v / max;
+      el(g, 'rect', { x: L + i * bw + 3, y: H - B - h, width: bw - 6, height: h, rx: 3, fill: color });
+      if (v) el(g, 'text', { x: L + i * bw + bw / 2, y: H - B - h - 3, 'text-anchor': 'middle' }, v);
+      if (i % 2 === 0) el(g, 'text', { x: L + i * bw + bw / 2, y: H - 6, 'text-anchor': 'middle' }, labelFn(i));
+    });
+    return g;
+  }
+
+  /* ---------- panels ---------- */
+  function renderKpis(s) {
+    var tiles = [
+      ['Coins gifted', F.num(s.coins), 'last 7 days ' + F.signed(s.wow) + ' vs prior', s.wow],
+      ['Gifters', F.num(s.gifters), 'sent at least one gift'],
+      ['Gift-send rate', s.sendRate === null ? 'n/a' : F.pct(s.sendRate, 2), s.sendRate === null ? 'viewers are not split by platform' : 'gifters per viewer, last 7d'],
+      ['Per gifter', F.num(s.arppu), 'coins per gifter, last 7d'],
+      ['New gifters back in 7d', F.pct(s.ret7), '30 days: ' + F.pct(s.ret30)],
+      ['Top 1% share', F.pct(s.top1), 'of all coins gifted'],
+      ['Chargebacks', F.pct(s.chargebackRate, 2), 'of successful purchases'],
+      ['Failed purchases', F.num(s.failedPurchases), 'all period']
+    ];
+    $('kpis').innerHTML = tiles.map(function (t) {
+      return '<div class="card kpi"><div class="label">' + t[0] + '</div><div class="value' + (t[3] !== undefined ? ' ' + cls(t[3]) : '') + '">' + t[1] + '</div><div class="note">' + t[2] + '</div></div>';
+    }).join('');
+  }
+
+  function renderFindings(list) {
+    var names = { high: 'Act now', medium: 'Look into', info: 'Note' };
+    $('findings').innerHTML = list.map(function (f, i) {
+      return '<details class="finding ' + f.severity + '"' + (i < 2 ? ' open' : '') + '><summary><span class="tag ' + f.severity + '">' + names[f.severity] + '</span><span>' + f.title + '</span></summary>' +
+        '<h3>Evidence</h3><ul>' + f.evidence.map(function (e) { return '<li>' + e + '</li>'; }).join('') + '</ul>' +
+        '<h3>Next steps</h3><ul>' + f.actions.map(function (a) { return '<li>' + a + '</li>'; }).join('') + '</ul>' +
+        '<div class="guard"><strong>Guardrail:</strong> ' + f.guardrail + '</div></details>';
+    }).join('');
+  }
+
+  function renderDecomp(s) {
+    if (!s.decomp) { $('decomp').innerHTML = '<p class="hint">Not enough data for this filter.</p>'; return; }
+    var rows = (s.decomp.viewers === undefined ? [['Gifters', s.decomp.gifters]] : [['Viewers', s.decomp.viewers], ['Gift-send rate', s.decomp.sendRate]])
+      .concat([['Gifts per gifter', s.decomp.giftsPerGifter], ['Coins per gift', s.decomp.coinsPerGift]]);
+    var max = Math.max.apply(null, rows.map(function (r) { return Math.abs(r[1]); }).concat([0.05])), big = rows.slice().sort(function (a, b) { return Math.abs(b[1]) - Math.abs(a[1]); })[0][0];
+    $('decomp').innerHTML = rows.map(function (r) {
+      var w = Math.abs(r[1]) / max * 50, left = r[1] < 0 ? 50 - w : 50;
+      return '<div class="bar"><span>' + r[0] + (r[0] === big ? ' ◀' : '') + '</span><div class="track"><div style="position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)"></div><div class="fill" style="left:' + left + '%;width:' + w + '%;background:' + (r[1] < 0 ? 'var(--bad)' : 'var(--good)') + '"></div></div><b class="' + cls(r[1]) + '" style="text-align:right">' + F.signed(r[1], 1) + '</b></div>';
+    }).join('') + '<p class="hint" style="margin-top:8px">Total change: <b class="' + cls(s.wow) + '">' + F.signed(s.wow, 1) + '</b></p>';
+  }
+
+  function renderSegments() {
+    var seg = M.segments(D), worst = seg[0];
+    $('segments').innerHTML = '<table><tr><th>Segment</th><th class="r">Prior 7d</th><th class="r">Last 7d</th><th class="r">Change</th></tr>' + seg.map(function (r) {
+      return '<tr' + (r === worst && r.change < -0.2 ? ' class="hl"' : '') + '><td>' + (r.platform === 'ios' ? 'iOS' : 'Android') + ' · ' + r.region + '</td><td class="r">' + short(r.prev) + '</td><td class="r">' + short(r.cur) + '</td><td class="r ' + cls(r.change) + '">' + F.signed(r.change) + '</td></tr>';
+    }).join('') + '</table>';
+  }
+
+  function renderRetention(s) {
+    var rows = [['Sent a 2nd gift', s.repeatShare], ['Back within 7 days', s.ret7], ['Back within 30 days', s.ret30]];
+    $('retention').innerHTML = rows.map(function (r) {
+      return '<div class="bar"><span>' + r[0] + '</span><div class="track"><div class="fill" style="left:0;width:' + (r[1] * 100) + '%;background:var(--accent)"></div></div><b style="text-align:right">' + F.pct(r[1]) + '</b></div>';
+    }).join('') + '<p class="hint" style="margin-top:8px">' + F.num(s.newGifters) + ' new gifters in this view. ' + F.pct(1 - s.repeatShare) + ' never sent a second gift.</p>';
+  }
+
+  function renderCampaign(s) {
+    var c = s.campaign;
+    if (!c) { $('campaign').innerHTML = '<p class="hint">Not enough holdout data for this filter.</p>'; return; }
+    $('camp-hint').textContent = c.name + ' (' + dateOf(c.start) + ' – ' + dateOf(c.end) + '). Treated: ' + c.treatment.join(', ') + '. Holdout: ' + c.holdout.join(', ') + '.';
+    var rows = [['Headline lift', c.rawLift, 'var(--muted)'], ['Lift vs holdout', c.trueLift, 'var(--accent)'], ['Week after vs holdout', c.afterLift, 'var(--bad)']];
+    var max = Math.max.apply(null, rows.map(function (r) { return Math.abs(r[1]); }).concat([0.1]));
+    $('campaign').innerHTML = rows.map(function (r) {
+      var w = Math.abs(r[1]) / max * 50, left = r[1] < 0 ? 50 - w : 50;
+      return '<div class="bar"><span>' + r[0] + '</span><div class="track"><div style="position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)"></div><div class="fill" style="left:' + left + '%;width:' + w + '%;background:' + r[2] + '"></div></div><b style="text-align:right">' + F.signed(r[1]) + '</b></div>';
+    }).join('') + '<p class="hint" style="margin-top:8px">The headline compares treated regions with their own earlier weeks. Only the holdout comparison shows what the campaign added.</p>';
+  }
+
+  function renderCreators() {
+    var cs = M.creatorStats(D), names = { head: 'Head', mid: 'Mid', emerging: 'Emerging' };
+    $('creators').innerHTML = '<table><tr><th>Tier</th><th class="r">Creators</th><th class="r">Active</th><th class="r">Earning (28d)</th><th class="r">Coins received</th></tr>' + cs.tiers.map(function (t) {
+      return '<tr><td>' + names[t.tier] + '</td><td class="r">' + t.creators + '</td><td class="r">' + t.active + '</td><td class="r">' + (t.active ? F.pct(t.earning / t.active) : '–') + '</td><td class="r">' + short(t.coins) + '</td></tr>';
+    }).join('') + '</table><p class="hint" style="margin-top:8px">The 10 biggest creators receive ' + F.pct(cs.top10Share) + ' of all coins.</p>';
+    var g = weekBars(cs.midChurnWeekly, 'var(--series2)', function (i) { return dateOf(i * 7); });
+    $('churn').innerHTML = ''; $('churn').appendChild(g);
+  }
+
+  function renderSafety() {
+    var cl = M.deviceClusters(D), G = D.gifters, ring = 0, minors = 0, minorActive = {}, i;
+    for (i = 0; i < G.id.length; i++) { if (cl.flagged[i]) ring++; if (G.minor[i]) minors++; }
+    for (i = 0; i < D.gifts.day.length; i++) if (G.minor[D.gifts.g[i]]) minorActive[D.gifts.g[i]] = 1;
+    var Z = D.prizes, stat = {}, usdBad = 0, suspects = 0;
+    for (i = 0; i < Z.rank.length; i++) { stat[Z.status[i]] = (stat[Z.status[i]] || 0) + 1; if (Z.status[i] !== 'sent') usdBad += Z.usd[i]; if (cl.flagged[Z.g[i]]) suspects++; }
+    var order = ['sent', 'failed', 'reissued', 'duplicate'];
+    $('safety').innerHTML = '<table>' +
+      '<tr><td>Accounts sharing a device with 2+ others</td><td class="r"><b>' + ring + '</b> on ' + cl.devices.length + ' devices</td></tr>' +
+      '<tr><td>Accounts flagged as possible minors</td><td class="r"><b>' + minors + '</b> (' + Object.keys(minorActive).length + ' have gifted)</td></tr>' +
+      '<tr><td>Prize winners on the suspect list</td><td class="r"><b>' + suspects + '</b></td></tr></table>' +
+      '<h2 style="margin-top:14px">Prize reconciliation</h2><table><tr><th>Status</th><th class="r">Winners</th></tr>' +
+      order.filter(function (k) { return stat[k]; }).map(function (k) { return '<tr' + (k !== 'sent' ? ' class="hl"' : '') + '><td>' + k + '</td><td class="r">' + stat[k] + '</td></tr>'; }).join('') +
+      '</table><p class="hint" style="margin-top:8px">' + F.usd(usdBad) + ' in prizes need follow-up.</p>';
+  }
+
+  /* ---------- wiring ---------- */
+  function render() {
+    var s = M.summary(D, { region: state.region || undefined, platform: state.platform || undefined }), scope = scopeLabel();
+    ['scope-daily', 'scope-decomp', 'scope-ret'].forEach(function (id) { $(id).textContent = scope; });
+    renderKpis(s); dailyChart(s); renderDecomp(s); renderRetention(s); renderCampaign(s);
+  }
+
+  var sel = $('f-region');
+  sel.innerHTML = '<option value="">All</option>' + D.regions.map(function (r) { return '<option>' + r + '</option>'; }).join('');
+  sel.onchange = function () { state.region = sel.value; render(); };
+  $('f-platform').onchange = function () { state.platform = this.value; render(); };
+  $('reset').onclick = function () { state.region = state.platform = ''; sel.value = ''; $('f-platform').value = ''; render(); };
+  $('theme').onclick = function () {
+    var root = document.documentElement, dark = root.getAttribute('data-theme') === 'dark' || (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  };
+  $('range').textContent = 'Synthetic LIVE gifting data · ' + dateOf(0) + ' – ' + dateOf(D.days - 1) + ', 2026 · ' + F.num(D.gifters.id.length) + ' gifters · ' + D.creators.id.length + ' creators';
+
+  renderFindings(M.findings(D)); renderSegments(); renderCreators(); renderSafety(); render();
+})();
+</script>
+</body>
+</html>
