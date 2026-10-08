@@ -1,0 +1,2 @@
+campaign_id,name,start_day,end_day,treatment_regions,holdout_regions,prize_budget_usd
+C1,End-of-Summer Battle Week,56,62,US-West|US-East,US-Central|US-South,4400
