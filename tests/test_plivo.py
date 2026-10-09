@@ -133,6 +133,9 @@ class HandshakeTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.run_async(FakeSocket())
 
+    def test_the_format_a_real_plivo_call_sends(self):
+        self.assertEqual(plivo.parse_extra_headers("{X-PH-token: 123.abc}"), {"token": "123.abc"})
+
     def test_start_without_ids_is_rejected(self):
         with self.assertRaises(ValueError):
             self.run_async(FakeSocket(json.dumps({"event": "start", "start": {}})))

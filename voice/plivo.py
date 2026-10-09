@@ -8,6 +8,7 @@ the stream's first message is a `start` event carrying the call and stream ids a
 import base64
 import hashlib
 import hmac
+import re
 import json
 from dataclasses import dataclass
 from urllib.parse import parse_qs, urlparse
@@ -79,15 +80,25 @@ def private_xml():
 # --- the stream's opening message --------------------------------------------------------------
 
 def parse_extra_headers(raw):
-    """'a=1;b=2' -> {'a': '1', 'b': '2'}. Anything else gives an empty dict."""
+    """Plivo's extra headers as a dict. Anything unreadable gives an empty dict.
+
+    Plivo's docs show 'a=1;b=2', but a real call sends '{X-PH-a: 1, X-PH-b: 2}': braces, an X-PH- prefix on each
+    name, and a colon. Both forms are accepted, and the prefix is removed."""
+    if isinstance(raw, dict):
+        items = [(str(k), str(v)) for k, v in raw.items()]
+    elif isinstance(raw, str):
+        items = []
+        for part in raw.strip().strip("{}").replace(",", ";").split(";"):
+            m = re.match(r"\s*([^=:\s]+)\s*[=:]\s*(.*?)\s*$", part)
+            if m:
+                items.append((m.group(1), m.group(2)))
+    else:
+        return {}
     out = {}
-    if not isinstance(raw, str):
-        return out
-    for part in raw.replace(",", ";").split(";"):
-        if "=" in part:
-            key, _, value = part.partition("=")
-            if key.strip():
-                out[key.strip()] = value.strip()
+    for key, value in items:
+        key = re.sub(r"(?i)^x-ph-", "", key.strip())
+        if key:
+            out[key] = value.strip().strip("'\"")
     return out
 
 
@@ -118,5 +129,6 @@ async def read_handshake(websocket, disconnected=(Disconnected,)):
         if not call_id or not stream_id:
             raise ValueError("the start event had no call or stream id")
         extra = msg.get("extra_headers") or start.get("extra_headers")
+        import logging; logging.getLogger("voice.plivo").warning("DEBUG top=%s start=%s extra=%r", sorted(msg), sorted(start), extra)
         return Handshake(str(call_id), str(stream_id), parse_extra_headers(extra).get("token"))
     raise ValueError("no start event arrived")
